@@ -1,0 +1,22 @@
+[project]
+name = "genai-workspace"
+version = "0.1.0"
+description = "GenAI Workspace & Admin Platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pydantic[email]",
+    "python-jose[cryptography]",
+    "cryptography",
+    "bcrypt",
+    "python-dotenv",
+    "python-multipart",
+    "pydantic-settings",
+    "email-validator",
+]
+
+[dependency-groups]
+dev = []

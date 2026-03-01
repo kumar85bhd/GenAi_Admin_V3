@@ -1,0 +1,19 @@
+{
+  "uiConfig": {
+    "cardsPerRow": 3
+  },
+  "apps": [
+    { "id": 1, "name": "Meetzy", "icon": "Zap", "category": "Productivity", "url": "https://example.com", "desc": "AI-powered meeting summaries and action items.", "baseActivity": "Next Meeting 3:30 PM" },
+    { "id": 2, "name": "Talk2Docs", "icon": "FileText", "category": "Knowledge", "url": "https://example.com", "desc": "Chat with your documents securely.", "baseActivity": "Last Query: HR Policy" },
+    { "id": 3, "name": "Agent Builder", "icon": "Wrench", "category": "Platform", "url": "https://example.com", "desc": "No-code platform to build AI agents.", "baseActivity": "2 Agents Pending" },
+    { "id": 4, "name": "SAM AI", "icon": "Cpu", "category": "Productivity", "url": "https://example.com", "desc": "Smart assistant for daily tasks.", "baseActivity": "Summary generated" },
+    { "id": 5, "name": "Survey Creation", "icon": "BarChart3", "category": "Customer", "url": "https://example.com", "desc": "Generate surveys from plain text.", "baseActivity": "Draft saved" },
+    { "id": 6, "name": "OptimusPrime FB", "icon": "MessageSquare", "category": "Customer", "url": "https://example.com", "desc": "Customer feedback sentiment analyzer.", "baseActivity": "24 feedbacks today" },
+    { "id": 7, "name": "Contract Intel", "icon": "Shield", "category": "Knowledge", "url": "https://example.com", "desc": "Extract insights from legal contracts.", "baseActivity": "5 processed today" },
+    { "id": 8, "name": "Sales Copilot", "icon": "TrendingUp", "category": "Productivity", "url": "https://example.com", "desc": "Real-time sales objection handling.", "baseActivity": "2 deals active" },
+    { "id": 9, "name": "Policy Advisor", "icon": "Book", "category": "Knowledge", "url": "https://example.com", "desc": "Company policy Q&A bot.", "baseActivity": "Used yesterday" },
+    { "id": 10, "name": "MCP Builder", "icon": "Link", "category": "Platform", "url": "https://example.com", "desc": "Model Context Protocol endpoint manager.", "baseActivity": "1 endpoint live" },
+    { "id": 11, "name": "CodeGenie", "icon": "Code", "category": "Productivity", "url": "https://example.com", "desc": "Generate boilerplate code instantly.", "baseActivity": "Python script generated" },
+    { "id": 12, "name": "Im.   geCraft", "icon": "Palette", "category": "Productivity", "url": "https://example.com", "desc": "Create marketing assets with AI.", "baseActivity": "3 images created" }
+  ]
+}

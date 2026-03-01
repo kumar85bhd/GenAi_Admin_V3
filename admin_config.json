@@ -1,0 +1,90 @@
+{
+  "dashboard_links": [
+    {
+      "id": "bac917a7-84ed-4ebf-b0d9-13d87f3f67b9",
+      "name": "LiteLLM",
+      "slug": "litellm",
+      "icon": "Link",
+      "url": "http://newapp.com",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "2231afff-e86d-4070-bf8a-cce04d92fe53",
+      "name": "Portainer",
+      "slug": "portainer",
+      "icon": "Link",
+      "url": "http://samsething.com",
+      "category": "AI Dashboard",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "4f0f3126-9be7-43a0-8ff7-96797d7ac9fb",
+      "name": "PG Admin",
+      "url": "https://pgadmin.example.com",
+      "category": "Database Administration",
+      "description": "Access pgadmin on 57 server",
+      "icon": "Database",
+      "slug": "pg-admin",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "10e3c5ed-5289-45af-abba-cd93d05dae3e",
+      "name": "MongoExpress",
+      "url": "https://mongo.example.com",
+      "category": "Database Administration",
+      "description": "Access MongoExpress on 57 server",
+      "icon": "Database",
+      "slug": "mongoexpress",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "327bd0df-80a3-4115-a976-99a9fb7825b5",
+      "name": "Redis Commander",
+      "url": "https://redis.example.com",
+      "category": "Database Administration",
+      "description": "Access Redis (Commander on 57 server)",
+      "icon": "Database",
+      "slug": "redis-commander",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "0a7fee4e-b4d8-4a18-a547-a196951356a8",
+      "name": "OptimasPrime FB",
+      "url": "https://optimas.example.com",
+      "category": "Analytics & Feedback",
+      "description": "View optimas prime feedback view",
+      "icon": "Activity",
+      "slug": "optimasprime-fb",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "6a306525-c7b2-4c8a-83ba-b56f0ffcc8a8",
+      "name": "Power BI",
+      "url": "https://powerbi.example.com",
+      "category": "Analytics & Feedback",
+      "description": "View power BI dashboard for all bots usage",
+      "icon": "BarChart",
+      "slug": "power-bi",
+      "display_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "3d94a98a-7ed1-4d94-935f-ad22ae718057",
+      "name": "Meetzy Dashboard",
+      "url": "https://meetzy.example.com",
+      "category": "Analytics & Feedback",
+      "description": "View meeting assistant History",
+      "icon": "Activity",
+      "slug": "meetzy-dashboard",
+      "display_order": 0,
+      "is_active": true
+    }
+  ],
+  "metrics": []
+}

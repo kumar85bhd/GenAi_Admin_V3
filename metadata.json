@@ -1,0 +1,5 @@
+{
+  "name": "Remix: GenAI Workspace And System Admin",
+  "description": "A dashboard for managing and accessing Generative AI tools with real-time metrics.",
+  "requestFramePermissions": []
+}
