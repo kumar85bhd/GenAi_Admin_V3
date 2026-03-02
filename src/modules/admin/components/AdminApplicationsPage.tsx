@@ -12,32 +12,36 @@ const AdminApplicationsPage: React.FC<AdminApplicationsPageProps> = ({ addToast 
   const [activeTab, setActiveTab] = useState<'apps' | 'links' | 'categories'>('apps');
   const [counts, setCounts] = useState({ apps: 0, links: 0, categories: 0 });
 
-  const fetchCounts = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const [appsRes, linksRes, catRes] = await Promise.all([
-        fetch('/api/workspace/apps?all=true', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/dashboard-links', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/workspace/categories', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-      
-      if (appsRes.ok && linksRes.ok && catRes.ok) {
-        const apps = await appsRes.json();
-        const links = await linksRes.json();
-        const cats = await catRes.json();
-        setCounts({
-          apps: Array.isArray(apps) ? apps.length : 0,
-          links: Array.isArray(links) ? links.length : 0,
-          categories: Array.isArray(cats) ? cats.length : 0
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching counts:', err);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+    const fetchCounts = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const [appsRes, linksRes, catRes] = await Promise.all([
+          fetch('/api/workspace/apps?all=true', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch('/api/admin/dashboard-links', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch('/api/workspace/categories', { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        
+        if (!isMounted) return;
+
+        if (appsRes.ok && linksRes.ok && catRes.ok) {
+          const apps = await appsRes.json();
+          const links = await linksRes.json();
+          const cats = await catRes.json();
+          setCounts({
+            apps: Array.isArray(apps) ? apps.length : 0,
+            links: Array.isArray(links) ? links.length : 0,
+            categories: Array.isArray(cats) ? cats.length : 0
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching counts:', err);
+      }
+    };
+
     fetchCounts();
+    return () => { isMounted = false; };
   }, [activeTab]); // Refresh counts when switching tabs or on mount
 
   return (

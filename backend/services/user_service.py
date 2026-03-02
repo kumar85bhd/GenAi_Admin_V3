@@ -1,32 +1,38 @@
 import json
 import os
-from typing import Optional, List
+import logging
+from typing import Optional, List, Any, Dict
 from sqlalchemy.orm import Session
 from backend.models.user import User
 from backend.schemas.user import UserInDB
 from backend.core.config import BASE_DIR
 from backend.core.security import get_password_hash
 
+logger = logging.getLogger(__name__)
+
 USERS_FILE = os.path.join(BASE_DIR, "backend", "data", "users.json")
 
-def get_users_from_json() -> List[dict]:
+def get_users_from_json() -> List[Dict[str, Any]]:
+    """Read users from the JSON file."""
     try:
         if not os.path.exists(USERS_FILE):
-            print(f"⚠️ USERS_FILE not found at: {USERS_FILE}")
+            logger.warning(f"USERS_FILE not found at: {USERS_FILE}")
             return []
         with open(USERS_FILE, "r") as f:
             return json.load(f)
     except Exception as e:
-        print(f"❌ Error reading USERS_FILE: {e}")
+        logger.error(f"Error reading USERS_FILE: {e}")
         return []
 
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    """Retrieve a user by their email address."""
     if not email:
         return None
     email = email.strip().lower()
     return db.query(User).filter(User.email == email).first()
 
-def seed_users(db: Session):
+def seed_users(db: Session) -> None:
+    """Seed the database with users from the JSON file if none exist."""
     if db.query(User).count() > 0:
         return
     
@@ -44,7 +50,7 @@ def seed_users(db: Session):
     
     try:
         db.commit()
-        print("✅ Users seeded successfully.")
+        logger.info("Users seeded successfully.")
     except Exception as e:
         db.rollback()
-        print(f"❌ Error seeding users: {e}")
+        logger.error(f"Error seeding users: {e}")

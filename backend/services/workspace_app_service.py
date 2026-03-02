@@ -1,45 +1,55 @@
+import logging
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from backend.models.workspace_app import WorkspaceApp
 from backend.models.category import Category
 from backend.schemas.workspace_app import WorkspaceAppCreate, WorkspaceAppUpdate
 
-def get_workspace_app(db: Session, app_id: int):
+logger = logging.getLogger(__name__)
+
+def get_workspace_app(db: Session, app_id: int) -> Optional[WorkspaceApp]:
+    """Retrieve a workspace app by its ID."""
     return db.query(WorkspaceApp).filter(WorkspaceApp.id == app_id).first()
 
-def get_workspace_apps(db: Session, skip: int = 0, limit: int = 100):
+def get_workspace_apps(db: Session, skip: int = 0, limit: int = 100) -> List[WorkspaceApp]:
+    """Retrieve a list of workspace apps with pagination."""
     return db.query(WorkspaceApp).offset(skip).limit(limit).all()
 
-def create_workspace_app(db: Session, app: WorkspaceAppCreate):
-    db_app = WorkspaceApp(**app.dict())
+def create_workspace_app(db: Session, app: WorkspaceAppCreate) -> WorkspaceApp:
+    """Create a new workspace app."""
+    db_app = WorkspaceApp(**app.model_dump())
     db.add(db_app)
     db.commit()
     db.refresh(db_app)
     return db_app
 
-def update_workspace_app(db: Session, app_id: int, app: WorkspaceAppUpdate):
+def update_workspace_app(db: Session, app_id: int, app: WorkspaceAppUpdate) -> Optional[WorkspaceApp]:
+    """Update an existing workspace app by its ID."""
     db_app = get_workspace_app(db, app_id)
     if db_app:
-        for key, value in app.dict().items():
+        for key, value in app.model_dump().items():
             setattr(db_app, key, value)
         db.commit()
         db.refresh(db_app)
     return db_app
 
-def delete_workspace_app(db: Session, app_id: int):
+def delete_workspace_app(db: Session, app_id: int) -> Optional[WorkspaceApp]:
+    """Delete a workspace app by its ID."""
     db_app = get_workspace_app(db, app_id)
     if db_app:
         db.delete(db_app)
         db.commit()
     return db_app
 
-def seed_apps(db: Session):
+def seed_apps(db: Session) -> None:
+    """Seed the database with initial workspace apps if none exist."""
     if db.query(WorkspaceApp).count() > 0:
         return
     
     # Get categories to link apps
     categories = {c.slug: c.id for c in db.query(Category).all()}
     if not categories:
-        print("⚠️ No categories found to seed apps.")
+        logger.warning("No categories found to seed apps.")
         return
 
     initial_apps = [
@@ -88,7 +98,7 @@ def seed_apps(db: Session):
     
     try:
         db.commit()
-        print("✅ Apps seeded successfully.")
+        logger.info("Apps seeded successfully.")
     except Exception as e:
         db.rollback()
-        print(f"❌ Error seeding apps: {e}")
+        logger.error(f"Error seeding apps: {e}")

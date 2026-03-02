@@ -20,11 +20,17 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Context provider for authentication state and operations.
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    /**
+     * Initializes authentication state by checking for an existing token.
+     */
     const initAuth = async () => {
       const token = localStorage.getItem('access_token');
       if (token) {
@@ -57,12 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
+  /**
+   * Logs in a user with the provided credentials.
+   * @param formData - The login form data.
+   */
   const login = async (formData: FormData) => {
-    console.log('Attempting login...');
     try {
       const data = await api.login(formData);
       if (data && data.access_token) {
-        console.log('Login successful, fetching user info...');
         localStorage.setItem('access_token', data.access_token);
         
         const userRes = await fetch('/api/auth/me', {
@@ -72,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userRes.ok) {
           const userData = await userRes.json();
           setUser(userData);
-          console.log('User profile loaded successfully');
         } else {
           // Profile fetch failed - rollback login
           localStorage.removeItem('access_token');
@@ -88,6 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  /**
+   * Logs out the current user.
+   */
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);

@@ -10,6 +10,9 @@ interface PreferencesContextType {
 
 export const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
+/**
+ * Context provider for user preferences (theme, behavior).
+ */
 export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -31,7 +34,6 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   useEffect(() => {
     const root = window.document.documentElement;
-    console.log('Toggling dark mode:', isDarkMode);
     if (isDarkMode) {
       root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -45,7 +47,14 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     localStorage.setItem('openInNewTab', String(openInNewTab));
   }, [openInNewTab]);
 
+  /**
+   * Toggles the dark mode theme.
+   */
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+
+  /**
+   * Toggles whether links should open in a new tab.
+   */
   const toggleOpenInNewTab = () => setOpenInNewTab(prev => !prev);
 
   return (

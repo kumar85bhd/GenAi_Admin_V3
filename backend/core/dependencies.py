@@ -1,3 +1,4 @@
+import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -6,6 +7,8 @@ from backend.core.config import settings
 from backend.database import SessionLocal
 from backend.services.user_service import get_user_by_email
 from backend.schemas.user import UserInDB
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -26,15 +29,15 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            print("❌ Token payload missing 'sub' claim")
+            logger.warning("Token payload missing 'sub' claim")
             raise credentials_exception
     except JWTError as e:
-        print(f"❌ JWT Decode Error: {e}")
+        logger.warning(f"JWT Decode Error: {e}")
         raise credentials_exception
     
     user = get_user_by_email(db=db, email=email)
     if user is None:
-        print(f"❌ User not found in database for email: {email}")
+        logger.warning(f"User not found in database for email: {email}")
         raise credentials_exception
     
     return user

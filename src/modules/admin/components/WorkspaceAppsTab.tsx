@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Edit2, Trash2, Plus, Check, X, FileText, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { ToastType } from '../../../shared/components/Toast';
 import { Tooltip } from '../../../shared/components/ui/Tooltip';
@@ -36,7 +36,7 @@ const WorkspaceAppsTab: React.FC<WorkspaceAppsTabProps> = ({ addToast }) => {
   const [isTextModalOpen, setIsTextModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof AppData; direction: 'asc' | 'desc' } | null>(null);
 
-  const fetchAppsAndCategories = async () => {
+  const fetchAppsAndCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const [appsRes, catRes] = await Promise.all([
@@ -58,11 +58,11 @@ const WorkspaceAppsTab: React.FC<WorkspaceAppsTabProps> = ({ addToast }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     fetchAppsAndCategories();
-  }, []);
+  }, [fetchAppsAndCategories]);
 
   const validateForm = (form: Partial<AppData>) => {
     if (!form.name || (form.name || '').length > 50) {
@@ -204,11 +204,9 @@ const WorkspaceAppsTab: React.FC<WorkspaceAppsTabProps> = ({ addToast }) => {
   const sortedApps = React.useMemo(() => {
     if (!sortConfig) return apps;
     return [...apps].sort((a, b) => {
-      // @ts-ignore
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === 'asc' ? -1 : 1;
       }
-      // @ts-ignore
       if (a[sortConfig.key] > b[sortConfig.key]) {
         return sortConfig.direction === 'asc' ? 1 : -1;
       }

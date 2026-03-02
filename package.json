@@ -9,17 +9,17 @@
     "frontend": "vite --port 3000 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 && tsc --noEmit"
   },
   "dependencies": {
     "autoprefixer": "^10.4.17",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.6.2",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "framer-motion": "^12.34.3",
     "jsonwebtoken": "^9.0.3",
+    "lowdb": "^7.0.1",
     "lucide-react": "^0.574.0",
     "multer": "^2.1.0",
     "postcss": "^8.4.35",
@@ -32,7 +32,6 @@
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",

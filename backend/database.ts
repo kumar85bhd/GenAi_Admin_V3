@@ -1,92 +1,101 @@
-import Database from 'better-sqlite3';
+import { JSONFilePreset } from 'lowdb/node';
 import path from 'path';
-import fs from 'fs';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, '..', 'data', 'workspace.db');
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  hashed_password: string;
+  is_active: boolean;
+  is_admin: boolean;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkspaceApp {
+  id: number;
+  name: string;
+  slug: string;
+  category_id: number;
+  icon: string;
+  url: string;
+  description: string;
+  key_features: string;
+  display_order: number;
+  is_active: boolean;
+  metrics_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Data {
+  users: User[];
+  categories: Category[];
+  workspace_apps: WorkspaceApp[];
+}
+
+const dbPath = path.join(__dirname, '..', 'backend', 'data', 'workspace.json');
 const dataDir = path.dirname(dbPath);
 
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-export const db = new Database(dbPath);
+const defaultData: Data = { users: [], categories: [], workspace_apps: [] };
 
-// Initialize Tables
-export function initDb() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      hashed_password TEXT NOT NULL,
-      is_active BOOLEAN DEFAULT 1,
-      is_admin BOOLEAN DEFAULT 0
-    );
+// We'll initialize the db instance in initDb because it's async
+export let db: any;
 
-    CREATE TABLE IF NOT EXISTS categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
-      icon TEXT DEFAULT 'Folder',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS workspace_apps (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
-      category_id INTEGER NOT NULL,
-      icon TEXT NOT NULL,
-      url TEXT NOT NULL,
-      description TEXT NOT NULL,
-      key_features TEXT,
-      display_order INTEGER DEFAULT 0,
-      is_active BOOLEAN DEFAULT 1,
-      metrics_enabled BOOLEAN DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (category_id) REFERENCES categories (id)
-    );
-  `);
-
-  try {
-    db.exec(`ALTER TABLE workspace_apps ADD COLUMN metrics_enabled BOOLEAN DEFAULT 0;`);
-  } catch (e) {
-    // Column might already exist
-  }
+export async function initDb() {
+  db = await JSONFilePreset<Data>(dbPath, defaultData);
+  await db.read();
   
-  try {
-    db.exec(`ALTER TABLE workspace_apps ADD COLUMN key_features TEXT;`);
-  } catch (e) {
-    // Column might already exist
+  // Ensure default structure if file was empty or corrupted
+  if (!db.data) {
+    db.data = defaultData;
+    await db.write();
   }
 }
 
-// Seeding Logic
-export function seedDb() {
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  if (userCount.count === 0) {
+export async function seedDb() {
+  if (!db.data) return;
+
+  // Seed Users
+  if (db.data.users.length === 0) {
     console.log('🌱 Seeding users...');
     const usersJsonPath = path.join(__dirname, '..', 'backend', 'data', 'users.json');
     if (fs.existsSync(usersJsonPath)) {
       const users = JSON.parse(fs.readFileSync(usersJsonPath, 'utf-8'));
-      const insertUser = db.prepare('INSERT INTO users (id, username, email, hashed_password, is_admin) VALUES (?, ?, ?, ?, ?)');
       for (const user of users) {
-        insertUser.run(user.id, user.username, user.email, bcrypt.hashSync(user.password, 10), user.is_admin ? 1 : 0);
+        db.data.users.push({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          hashed_password: bcrypt.hashSync(user.password, 10),
+          is_active: true,
+          is_admin: !!user.is_admin
+        });
       }
     } else {
       console.log(`⚠️ Users file not found at ${usersJsonPath}`);
     }
   }
 
-  const catCount = db.prepare('SELECT COUNT(*) as count FROM categories').get() as { count: number };
-  if (catCount.count === 0) {
+  // Seed Categories
+  if (db.data.categories.length === 0) {
     console.log('🌱 Seeding categories...');
     const categories = [
       { name: 'Generative Text', slug: 'gen-text', icon: 'MessageSquare' },
@@ -95,17 +104,21 @@ export function seedDb() {
       { name: 'Data Analytics', slug: 'data-analytics', icon: 'BarChart' },
       { name: 'Productivity', slug: 'productivity', icon: 'Zap' },
     ];
-    const insertCat = db.prepare('INSERT INTO categories (name, slug, icon) VALUES (?, ?, ?)');
-    for (const cat of categories) {
-      insertCat.run(cat.name, cat.slug, cat.icon);
-    }
+    
+    categories.forEach((cat, index) => {
+      db.data.categories.push({
+        id: index + 1,
+        ...cat,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    });
   }
 
-  const appCount = db.prepare('SELECT COUNT(*) as count FROM workspace_apps').get() as { count: number };
-  if (appCount.count === 0) {
+  // Seed Apps
+  if (db.data.workspace_apps.length === 0) {
     console.log('🌱 Seeding apps...');
-    const categories = db.prepare('SELECT id, slug FROM categories').all() as { id: number, slug: string }[];
-    const catMap = Object.fromEntries(categories.map(c => [c.slug, c.id]));
+    const catMap = Object.fromEntries(db.data.categories.map((c: Category) => [c.slug, c.id]));
 
     const apps = [
       { name: 'Gemini Pro', slug: 'gemini-pro', category_id: catMap['gen-text'], icon: 'Cpu', url: 'https://gemini.google.com', description: 'Advanced reasoning and multimodal capabilities.', display_order: 1 },
@@ -124,11 +137,20 @@ export function seedDb() {
       { name: 'PowerBI AI', slug: 'powerbi-ai', category_id: catMap['data-analytics'], icon: 'BarChart', url: 'https://powerbi.microsoft.com', description: 'Business intelligence with AI.', display_order: 2 }
     ];
 
-    const insertApp = db.prepare('INSERT INTO workspace_apps (name, slug, category_id, icon, url, description, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    for (const app of apps) {
+    apps.forEach((app, index) => {
       if (app.category_id) {
-        insertApp.run(app.name, app.slug, app.category_id, app.icon, app.url, app.description, app.display_order);
+        db.data.workspace_apps.push({
+          id: index + 1,
+          ...app,
+          key_features: '',
+          is_active: true,
+          metrics_enabled: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
       }
-    }
+    });
   }
+
+  await db.write();
 }

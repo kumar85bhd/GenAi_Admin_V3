@@ -16,6 +16,7 @@ router = APIRouter()
 
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """Authenticate user and return a JWT token."""
     # form_data.username contains the email
     logger.info(f"Login attempt for email: {form_data.username}")
     user = get_user_by_email(db, form_data.username)
@@ -41,4 +42,5 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @router.get("/me", response_model=UserResponse)
 def read_users_me(current_user: UserResponse = Depends(get_current_user)):
+    """Get the current authenticated user's information."""
     return current_user

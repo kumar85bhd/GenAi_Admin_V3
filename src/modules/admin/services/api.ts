@@ -10,17 +10,12 @@ export const fetchConfig = async (): Promise<AppConfig> => {
 
 /**
  * Fetches metrics for a specific service.
- * Uses try/catch to handle potential endpoint failures.
  */
-export const fetchServiceMetrics = async (serviceId: string): Promise<Metric[]> => {
-  try {
-    return [
-      { label: 'CPU', value: `${Math.floor(Math.random() * 20) + 5}%` },
-      { label: 'Memory', value: `${Math.floor(Math.random() * 500) + 100}MB` }
-    ];
-  } catch (error) {
-    throw error;
-  }
+export const fetchServiceMetrics = async (_serviceId: string): Promise<Metric[]> => {
+  return [
+    { label: 'CPU', value: `${Math.floor(Math.random() * 20) + 5}%` },
+    { label: 'Memory', value: `${Math.floor(Math.random() * 500) + 100}MB` }
+  ];
 };
 
 export const fetchDashboardLinks = async (): Promise<any[]> => {

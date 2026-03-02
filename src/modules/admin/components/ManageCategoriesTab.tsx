@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, Plus, Check, X, Link as LinkIcon, ArrowUp, ArrowDown, Info } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Edit2, Trash2, Plus, Check, X, ArrowUp, ArrowDown, Info } from 'lucide-react';
 import { ToastType } from '../../../shared/components/Toast';
 import { Tooltip } from '../../../shared/components/ui/Tooltip';
 
@@ -24,7 +24,7 @@ const ManageCategoriesTab: React.FC<ManageCategoriesTabProps> = ({ addToast, onC
   const [isCreating, setIsCreating] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof CategoryData; direction: 'asc' | 'desc' } | null>(null);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch('/api/workspace/categories', {
@@ -39,11 +39,11 @@ const ManageCategoriesTab: React.FC<ManageCategoriesTabProps> = ({ addToast, onC
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   const validateForm = (form: Partial<CategoryData>) => {
     if (!form.name || form.name.length > 50) {

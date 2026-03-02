@@ -5,13 +5,11 @@ A unified React application combining a user-facing GenAI Workspace and an Admin
 
 ## 2. Architecture Summary
 - **Frontend**: React (TypeScript) + Vite
-- **Backend**: FastAPI (Python)
-- **Database**: PostgreSQL
+- **Database**: lowdb (JSON-based)
 - **Styling**: Tailwind CSS
 - **Routing**: React Router DOM (v6)
 - **State Management**: Context API (Auth)
 - **Authentication**: JWT (HS256)
-- **ORM**: SQLAlchemy
 - **Modules**:
   - **Workspace**: User interface for AI tools.
   - **Admin**: Dashboard for system health monitoring.
@@ -23,22 +21,14 @@ A unified React application combining a user-facing GenAI Workspace and an Admin
 - **Tailwind CSS**
 - **Lucide React** (Icons)
 - **Recharts** (Charts)
-- **FastAPI** (Backend)
-- **Uvicorn** (ASGI Server)
-- **Pydantic** (Data Validation)
-- **SQLAlchemy** (ORM)
-- **PostgreSQL** (Database)
+- **Express** (Backend)
+- **lowdb** (Database)
 
 ## 4. Folder Structure
 ```
 /backend
-  /core             # Core logic (config, security, dependencies)
-  /models           # SQLAlchemy models
-  /schemas          # Pydantic schemas
-  /services         # Business logic
-  /routes           # API routes
-  database.py       # Database session management
-  main.py           # FastAPI application entry point
+  data/             # JSON storage (workspace.json)
+  database.ts       # lowdb initialization and seeding
 /src
   /modules
     /workspace      # User-facing module
@@ -53,19 +43,13 @@ A unified React application combining a user-facing GenAI Workspace and an Admin
 1.  **Install dependencies**:
     ```bash
     npm install
-    uv sync
     ```
 
-2.  **Option A: Single Command (Recommended)**:
+2.  **Run the application**:
     ```bash
     npm run dev
     ```
-    This starts both the **FastAPI backend** and the **Vite frontend** automatically using a single Node.js entry point (`server.ts`).
-
-3.  **Option B: Separate Terminals**:
-    If you prefer to run them separately:
-    - **Backend**: `npm run backend`
-    - **Frontend**: `npm run frontend`
+    This starts the **Express backend** (which also serves the Vite frontend in development) automatically using a single Node.js entry point (`server.ts`).
 
 ### Default Credentials
 - **Email**: `admin@example.com`
@@ -75,19 +59,11 @@ A unified React application combining a user-facing GenAI Workspace and an Admin
 - Create a `.env` file in the root directory.
 - Example `.env`:
   ```env
-  GEMINI_API_KEY=your-gemini-api-key
   SECRET_KEY=super-secret-key
-  DATABASE_URL=sqlite:///./backend/data/sql_app.db
   ```
 
 ### Database Setup
-By default, the application uses **SQLite** for easy setup. The database file will be created automatically at `backend/data/sql_app.db` on the first run.
-
-To use **PostgreSQL** instead:
-1. Install PostgreSQL and ensure it is running.
-2. Create a database named `genai_workspace`.
-3. Update `DATABASE_URL` in your `.env` file:
-   `DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/genai_workspace`
+By default, the application uses **lowdb** for easy setup. The database file will be created automatically at `backend/data/workspace.json` on the first run.
 
 ## 7. API Endpoints
 

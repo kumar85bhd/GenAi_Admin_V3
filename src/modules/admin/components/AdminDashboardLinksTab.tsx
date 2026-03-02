@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, Plus, Check, X, Link as LinkIcon, ArrowUp, ArrowDown, Info } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Edit2, Trash2, Plus, Check, X, ArrowUp, ArrowDown, Info } from 'lucide-react';
 import { ToastType } from '../../../shared/components/Toast';
 import { Tooltip } from '../../../shared/components/ui/Tooltip';
 
@@ -35,7 +35,7 @@ const AdminDashboardLinksTab: React.FC<AdminDashboardLinksTabProps> = ({ addToas
   const [isCreating, setIsCreating] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof DashboardLink; direction: 'asc' | 'desc' } | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const [linksRes, catRes] = await Promise.all([
@@ -57,11 +57,11 @@ const AdminDashboardLinksTab: React.FC<AdminDashboardLinksTabProps> = ({ addToas
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const validateForm = (form: Partial<DashboardLink>) => {
     if (!form.name) {
@@ -206,11 +206,9 @@ const AdminDashboardLinksTab: React.FC<AdminDashboardLinksTabProps> = ({ addToas
   const sortedLinks = React.useMemo(() => {
     if (!sortConfig) return links;
     return [...links].sort((a, b) => {
-      // @ts-ignore
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === 'asc' ? -1 : 1;
       }
-      // @ts-ignore
       if (a[sortConfig.key] > b[sortConfig.key]) {
         return sortConfig.direction === 'asc' ? 1 : -1;
       }

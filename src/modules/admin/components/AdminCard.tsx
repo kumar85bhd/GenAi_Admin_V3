@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Service, Metric, HealthStatus } from '../types';
 import { fetchServiceMetrics } from '../services/api';
-import { ExternalLink, RefreshCw, Activity } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { DynamicIcon } from '../../../shared/components/ui/DynamicIcon';
 
 interface AdminCardProps {
@@ -59,7 +59,7 @@ const AdminCard: React.FC<AdminCardProps> = ({ service }) => {
       if (newMetrics && newMetrics.length > 0) {
         setMetrics(newMetrics);
       }
-    } catch (error) {
+    } catch {
       setMetrics([{ label: 'Status', value: 'N/A' }]);
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppConfig, Service, HealthStatus } from './types';
 import { fetchConfig } from './services/api';
 import AdminDashboardCards from './components/AdminDashboardCards';
@@ -24,73 +24,78 @@ const AdminModule: React.FC = () => {
 
   const isAdmin = !!user?.is_admin;
 
-  const addToast = (message: string, type: ToastType = 'info') => {
+  const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = Math.random().toString(36).substring(7);
     setToasts(prev => [...prev, { id, message, type }]);
-  };
+  }, []);
 
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const loadData = async () => {
-    try {
-      const [cfg, dashboardLinks] = await Promise.all([
-        fetchConfig(),
-        fetch('/api/admin/dashboard-links', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
-        }).then(res => res.ok ? res.json() : [])
-      ]);
-
-      setConfig(cfg);
-      
-      const initialServices: Service[] = [];
-      
-      // Add hardcoded config services
-      cfg.categories.forEach(cat => {
-        cat.services.forEach(s => {
-          initialServices.push({
-            id: s.id,
-            name: s.name,
-            category: cat.name,
-            status: HealthStatus.HEALTHY,
-            lastUpdated: new Date().toISOString(),
-            type: s.type,
-            url: s.url,
-            description: s.description,
-            metrics: []
-          });
-        });
-      });
-
-      // Add dynamic dashboard links as services
-      dashboardLinks.forEach((link: any) => {
-        if (link.is_active) {
-          initialServices.push({
-            id: link.id,
-            name: link.name,
-            category: link.category || 'Uncategorized',
-            status: HealthStatus.ACTIVE,
-            lastUpdated: new Date().toISOString(),
-            type: link.icon?.toLowerCase() || 'link',
-            url: link.url,
-            description: link.description || `Managed link: ${link.name}`,
-            metrics: []
-          });
-        }
-      });
-
-      setServices(initialServices);
-    } catch (error) {
-      console.error('Error loading admin data:', error);
-      addToast('Failed to load system data', 'error');
-    }
-  };
-
   // Initialize from config and dashboard links
   useEffect(() => {
+    let isMounted = true;
+    
+    const loadData = async () => {
+      try {
+        const [cfg, dashboardLinks] = await Promise.all([
+          fetchConfig(),
+          fetch('/api/admin/dashboard-links', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          }).then(res => res.ok ? res.json() : [])
+        ]);
+
+        if (!isMounted) return;
+
+        setConfig(cfg);
+        
+        const initialServices: Service[] = [];
+        
+        // Add hardcoded config services
+        cfg.categories.forEach(cat => {
+          cat.services.forEach(s => {
+            initialServices.push({
+              id: s.id,
+              name: s.name,
+              category: cat.name,
+              status: HealthStatus.HEALTHY,
+              lastUpdated: new Date().toISOString(),
+              type: s.type,
+              url: s.url,
+              description: s.description,
+              metrics: []
+            });
+          });
+        });
+
+        // Add dynamic dashboard links as services
+        dashboardLinks.forEach((link: any) => {
+          if (link.is_active) {
+            initialServices.push({
+              id: link.id,
+              name: link.name,
+              category: link.category || 'Uncategorized',
+              status: HealthStatus.ACTIVE,
+              lastUpdated: new Date().toISOString(),
+              type: link.icon?.toLowerCase() || 'link',
+              url: link.url,
+              description: link.description || `Managed link: ${link.name}`,
+              metrics: []
+            });
+          }
+        });
+
+        setServices(initialServices);
+      } catch (error) {
+        console.error('Error loading admin data:', error);
+        addToast('Failed to load system data', 'error');
+      }
+    };
+
     loadData();
-  }, [activeCategory]);
+    return () => { isMounted = false; };
+  }, [activeCategory, addToast]);
 
   const categories = useMemo(() => {
     return Array.from(new Set(services.map(s => s.category).filter(Boolean))).sort() as string[];

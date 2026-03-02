@@ -21,8 +21,8 @@ async function startServer() {
   console.log("🚀 Starting Unified GenAI Workspace (Node.js Backend)...");
   
   // Initialize Database
-  initDb();
-  seedDb();
+  await initDb();
+  await seedDb();
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -51,10 +51,10 @@ async function startServer() {
   // --- API Routes ---
 
   // Auth
-  app.post("/api/auth/login", (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     const { username, password } = req.body;
-    // Note: username field in OAuth2PasswordRequestForm often holds the email
-    const user = db.prepare('SELECT * FROM users WHERE email = ? OR username = ?').get(username, username) as any;
+    await db.read();
+    const user = db.data.users.find((u: any) => u.email === username || u.username === username);
 
     if (!user || !bcrypt.compareSync(password, user.hashed_password)) {
       return res.status(401).json({ detail: "Incorrect email or password" });
@@ -64,45 +64,73 @@ async function startServer() {
     res.json({ access_token: token, token_type: "bearer" });
   });
 
-  app.get("/api/auth/me", authenticateToken, (req: any, res) => {
-    const user = db.prepare('SELECT id, username, email, is_admin FROM users WHERE email = ?').get(req.user.sub) as any;
+  app.get("/api/auth/me", authenticateToken, async (req: any, res) => {
+    await db.read();
+    const user = db.data.users.find((u: any) => u.email === req.user.sub);
     if (!user) return res.status(404).json({ detail: "User not found" });
-    res.json({ ...user, is_admin: !!user.is_admin });
+    const userWithoutPassword = { ...user };
+    delete userWithoutPassword.hashed_password;
+    res.json({ ...userWithoutPassword, is_admin: !!user.is_admin });
   });
 
   // Workspace Categories
-  app.get("/api/workspace/categories", (req, res) => {
-    const categories = db.prepare('SELECT * FROM categories ORDER BY name ASC').all();
+  app.get("/api/workspace/categories", async (req, res) => {
+    await db.read();
+    const categories = [...db.data.categories].sort((a, b) => a.name.localeCompare(b.name));
     res.json(categories);
   });
 
-  app.post("/api/workspace/categories", authenticateToken, isAdmin, (req, res) => {
+  app.post("/api/workspace/categories", authenticateToken, isAdmin, async (req, res) => {
     const { name, slug, icon } = req.body;
     try {
-      const info = db.prepare('INSERT INTO categories (name, slug, icon) VALUES (?, ?, ?)').run(name, slug, icon || 'Folder');
-      const newCat = db.prepare('SELECT * FROM categories WHERE id = ?').get(info.lastInsertRowid);
+      await db.read();
+      const id = db.data.categories.length > 0 ? Math.max(...db.data.categories.map((c: any) => c.id)) + 1 : 1;
+      const newCat = {
+        id,
+        name,
+        slug,
+        icon: icon || 'Folder',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      db.data.categories.push(newCat);
+      await db.write();
       res.json(newCat);
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
     }
   });
 
-  app.put("/api/workspace/categories/:id", authenticateToken, isAdmin, (req, res) => {
+  app.put("/api/workspace/categories/:id", authenticateToken, isAdmin, async (req, res) => {
     const { name, slug, icon } = req.body;
+    const id = parseInt(req.params.id);
     try {
-      db.prepare('UPDATE categories SET name = ?, slug = ?, icon = ? WHERE id = ?').run(name, slug, icon || 'Folder', req.params.id);
-      const updatedCat = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
-      if (!updatedCat) return res.status(404).json({ detail: "Category not found" });
-      res.json(updatedCat);
+      await db.read();
+      const index = db.data.categories.findIndex((c: any) => c.id === id);
+      if (index === -1) return res.status(404).json({ detail: "Category not found" });
+      
+      db.data.categories[index] = {
+        ...db.data.categories[index],
+        name,
+        slug,
+        icon: icon || 'Folder',
+        updated_at: new Date().toISOString()
+      };
+      await db.write();
+      res.json(db.data.categories[index]);
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
     }
   });
 
-  app.delete("/api/workspace/categories/:id", authenticateToken, isAdmin, (req, res) => {
+  app.delete("/api/workspace/categories/:id", authenticateToken, isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
     try {
-      const info = db.prepare('DELETE FROM categories WHERE id = ?').run(req.params.id);
-      if (info.changes === 0) return res.status(404).json({ detail: "Category not found" });
+      await db.read();
+      const initialLength = db.data.categories.length;
+      db.data.categories = db.data.categories.filter((c: any) => c.id !== id);
+      if (db.data.categories.length === initialLength) return res.status(404).json({ detail: "Category not found" });
+      await db.write();
       res.json({ message: "Category deleted" });
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
@@ -110,67 +138,106 @@ async function startServer() {
   });
 
   // Workspace Apps
-  app.get("/api/workspace/apps", (req, res) => {
+  app.get("/api/workspace/apps", async (req, res) => {
     const includeInactive = req.query.all === 'true';
-    const query = `
-      SELECT 
-        a.id, a.name, a.slug, a.icon, a.url, a.description, a.key_features,
-        a.display_order, a.is_active, a.metrics_enabled, c.name as category 
-      FROM workspace_apps a
-      JOIN categories c ON a.category_id = c.id
-      ${includeInactive ? '' : 'WHERE a.is_active = 1'}
-      ORDER BY a.display_order ASC, a.name ASC
-    `;
-    const apps = db.prepare(query).all() as any[];
+    await db.read();
+    
+    let apps = db.data.workspace_apps;
+    if (!includeInactive) {
+      apps = apps.filter((a: any) => a.is_active);
+    }
 
-    // Add missing fields for frontend compatibility
-    const mappedApps = apps.map(app => ({
-      ...app,
-      desc: app.description,
-      keyFeatures: app.key_features,
-      metricsEnabled: app.metrics_enabled === 1,
-      baseActivity: 'System: Active',
-      isFavorite: false,
-      metrics: '94/100',
-      status: 'Healthy',
-      lastUsed: new Date().toISOString()
-    }));
+    const mappedApps = apps.map((app: any) => {
+      const category = db.data.categories.find((c: any) => c.id === app.category_id);
+      return {
+        ...app,
+        category: category ? category.name : 'Uncategorized',
+        desc: app.description,
+        keyFeatures: app.key_features,
+        metricsEnabled: !!app.metrics_enabled,
+        baseActivity: 'System: Active',
+        isFavorite: false,
+        metrics: '94/100',
+        status: 'Healthy',
+        lastUsed: new Date().toISOString()
+      };
+    });
+
+    mappedApps.sort((a: any, b: any) => {
+      if (a.display_order !== b.display_order) {
+        return a.display_order - b.display_order;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
     res.json(mappedApps);
   });
 
-  app.post("/api/workspace/apps", authenticateToken, isAdmin, (req, res) => {
+  app.post("/api/workspace/apps", authenticateToken, isAdmin, async (req, res) => {
     const { name, slug, category_id, icon, url, description, key_features, display_order, is_active, metrics_enabled } = req.body;
     try {
-      const info = db.prepare('INSERT INTO workspace_apps (name, slug, category_id, icon, url, description, key_features, display_order, is_active, metrics_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .run(name, slug, category_id, icon, url?.toString() || '', description, key_features || '', display_order || 0, is_active ? 1 : 0, metrics_enabled ? 1 : 0);
-      const newApp = db.prepare('SELECT * FROM workspace_apps WHERE id = ?').get(info.lastInsertRowid);
+      await db.read();
+      const id = db.data.workspace_apps.length > 0 ? Math.max(...db.data.workspace_apps.map((a: any) => a.id)) + 1 : 1;
+      const newApp = {
+        id,
+        name,
+        slug,
+        category_id: parseInt(category_id),
+        icon,
+        url: url?.toString() || '',
+        description,
+        key_features: key_features || '',
+        display_order: display_order || 0,
+        is_active: !!is_active,
+        metrics_enabled: !!metrics_enabled,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      db.data.workspace_apps.push(newApp);
+      await db.write();
       res.json(newApp);
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
     }
   });
 
-  app.put("/api/workspace/apps/:id", authenticateToken, isAdmin, (req, res) => {
+  app.put("/api/workspace/apps/:id", authenticateToken, isAdmin, async (req, res) => {
     const { name, slug, category_id, icon, url, description, key_features, display_order, is_active, metrics_enabled } = req.body;
+    const id = parseInt(req.params.id);
     try {
-      db.prepare(`
-        UPDATE workspace_apps 
-        SET name = ?, slug = ?, category_id = ?, icon = ?, url = ?, description = ?, key_features = ?, display_order = ?, is_active = ?, metrics_enabled = ?
-        WHERE id = ?
-      `).run(name, slug, category_id, icon, url?.toString() || '', description, key_features || '', display_order || 0, is_active ? 1 : 0, metrics_enabled ? 1 : 0, req.params.id);
-      const updatedApp = db.prepare('SELECT * FROM workspace_apps WHERE id = ?').get(req.params.id);
-      if (!updatedApp) return res.status(404).json({ detail: "App not found" });
-      res.json(updatedApp);
+      await db.read();
+      const index = db.data.workspace_apps.findIndex((a: any) => a.id === id);
+      if (index === -1) return res.status(404).json({ detail: "App not found" });
+
+      db.data.workspace_apps[index] = {
+        ...db.data.workspace_apps[index],
+        name,
+        slug,
+        category_id: parseInt(category_id),
+        icon,
+        url: url?.toString() || '',
+        description,
+        key_features: key_features || '',
+        display_order: display_order || 0,
+        is_active: !!is_active,
+        metrics_enabled: !!metrics_enabled,
+        updated_at: new Date().toISOString()
+      };
+      await db.write();
+      res.json(db.data.workspace_apps[index]);
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
     }
   });
 
-  app.delete("/api/workspace/apps/:id", authenticateToken, isAdmin, (req, res) => {
+  app.delete("/api/workspace/apps/:id", authenticateToken, isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
     try {
-      const info = db.prepare('DELETE FROM workspace_apps WHERE id = ?').run(req.params.id);
-      if (info.changes === 0) return res.status(404).json({ detail: "App not found" });
+      await db.read();
+      const initialLength = db.data.workspace_apps.length;
+      db.data.workspace_apps = db.data.workspace_apps.filter((a: any) => a.id !== id);
+      if (db.data.workspace_apps.length === initialLength) return res.status(404).json({ detail: "App not found" });
+      await db.write();
       res.json({ message: "App deleted" });
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
@@ -183,7 +250,9 @@ async function startServer() {
       if (fs.existsSync(ADMIN_CONFIG_PATH)) {
         return JSON.parse(fs.readFileSync(ADMIN_CONFIG_PATH, 'utf-8'));
       }
-    } catch (e) {}
+    } catch {
+      // Ignore read errors, return default
+    }
     return { dashboard_links: [] };
   };
 

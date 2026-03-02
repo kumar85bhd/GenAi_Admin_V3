@@ -10,15 +10,18 @@ router = APIRouter()
 
 @router.get("/categories", response_model=List[category_schema.CategoryInDB])
 def read_categories(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Retrieve all categories."""
     categories = category_service.get_categories(db, skip=skip, limit=limit)
     return categories
 
 @router.post("/categories", response_model=category_schema.CategoryInDB)
 def create_category(category: category_schema.CategoryCreate, db: Session = Depends(get_db)):
+    """Create a new category."""
     return category_service.create_category(db=db, category=category)
 
 @router.put("/categories/{category_id}", response_model=category_schema.CategoryInDB)
 def update_category(category_id: int, category: category_schema.CategoryUpdate, db: Session = Depends(get_db)):
+    """Update an existing category."""
     db_category = category_service.update_category(db, category_id, category)
     if db_category is None:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -26,6 +29,7 @@ def update_category(category_id: int, category: category_schema.CategoryUpdate, 
 
 @router.delete("/categories/{category_id}", response_model=category_schema.CategoryInDB)
 def delete_category(category_id: int, db: Session = Depends(get_db)):
+    """Delete a category."""
     db_category = category_service.delete_category(db, category_id)
     if db_category is None:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -33,15 +37,18 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 
 @router.get("/apps", response_model=List[workspace_app_schema.WorkspaceAppInDB])
 def read_workspace_apps(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Retrieve all workspace apps."""
     apps = workspace_app_service.get_workspace_apps(db, skip=skip, limit=limit)
     return apps
 
 @router.post("/apps", response_model=workspace_app_schema.WorkspaceAppInDB)
 def create_workspace_app(app: workspace_app_schema.WorkspaceAppCreate, db: Session = Depends(get_db)):
+    """Create a new workspace app."""
     return workspace_app_service.create_workspace_app(db=db, app=app)
 
 @router.put("/apps/{app_id}", response_model=workspace_app_schema.WorkspaceAppInDB)
 def update_workspace_app(app_id: int, app: workspace_app_schema.WorkspaceAppUpdate, db: Session = Depends(get_db)):
+    """Update an existing workspace app."""
     db_app = workspace_app_service.update_workspace_app(db, app_id, app)
     if db_app is None:
         raise HTTPException(status_code=404, detail="App not found")
@@ -49,6 +56,7 @@ def update_workspace_app(app_id: int, app: workspace_app_schema.WorkspaceAppUpda
 
 @router.delete("/apps/{app_id}", response_model=workspace_app_schema.WorkspaceAppInDB)
 def delete_workspace_app(app_id: int, db: Session = Depends(get_db)):
+    """Delete a workspace app."""
     db_app = workspace_app_service.delete_workspace_app(db, app_id)
     if db_app is None:
         raise HTTPException(status_code=404, detail="App not found")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Edit2, Trash2, Plus, Check, X, Link as LinkIcon } from 'lucide-react';
 import { ToastType } from '../../../shared/components/Toast';
 
@@ -20,7 +20,7 @@ const AdminCategoriesPage: React.FC<AdminCategoriesPageProps> = ({ addToast }) =
   const [editForm, setEditForm] = useState<Partial<CategoryData>>({});
   const [isCreating, setIsCreating] = useState(false);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch('/api/workspace/categories', {
@@ -35,11 +35,11 @@ const AdminCategoriesPage: React.FC<AdminCategoriesPageProps> = ({ addToast }) =
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   const validateForm = (form: Partial<CategoryData>) => {
     if (!form.name || form.name.length > 50) {

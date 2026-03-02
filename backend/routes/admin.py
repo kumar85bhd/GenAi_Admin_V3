@@ -10,6 +10,7 @@ router = APIRouter()
 ADMIN_CONFIG_PATH = "admin_config.json"
 
 def read_admin_config():
+    """Read the admin configuration from the JSON file."""
     try:
         with open(ADMIN_CONFIG_PATH, "r") as f:
             return json.load(f)
@@ -17,16 +18,19 @@ def read_admin_config():
         return {"dashboard_links": []}
 
 def write_admin_config(config):
+    """Write the admin configuration to the JSON file."""
     with open(ADMIN_CONFIG_PATH, "w") as f:
         json.dump(config, f, indent=2)
 
 @router.get("/dashboard-links")
 def get_dashboard_links(current_user: UserInDB = Depends(get_current_admin_user)):
+    """Retrieve all admin dashboard links."""
     config = read_admin_config()
     return config.get("dashboard_links", [])
 
 @router.post("/dashboard-links")
 def create_dashboard_link(link: dict, current_user: UserInDB = Depends(get_current_admin_user)):
+    """Create a new admin dashboard link."""
     config = read_admin_config()
     links = config.get("dashboard_links", [])
     link["id"] = str(uuid4())
@@ -37,6 +41,7 @@ def create_dashboard_link(link: dict, current_user: UserInDB = Depends(get_curre
 
 @router.put("/dashboard-links/{link_id}")
 def update_dashboard_link(link_id: UUID, link_data: dict, current_user: UserInDB = Depends(get_current_admin_user)):
+    """Update an existing admin dashboard link."""
     config = read_admin_config()
     links = config.get("dashboard_links", [])
     link_id_str = str(link_id)
@@ -50,6 +55,7 @@ def update_dashboard_link(link_id: UUID, link_data: dict, current_user: UserInDB
 
 @router.delete("/dashboard-links/{link_id}")
 def delete_dashboard_link(link_id: UUID, current_user: UserInDB = Depends(get_current_admin_user)):
+    """Delete an admin dashboard link."""
     config = read_admin_config()
     links = config.get("dashboard_links", [])
     link_id_str = str(link_id)
