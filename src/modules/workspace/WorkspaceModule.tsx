@@ -304,7 +304,7 @@ const WorkspaceModule: React.FC = () => {
              <AnimatePresence mode="wait">
                <motion.div 
                   key={activeFilter + '-' + activeCategory} 
-                  className="glass-panel rounded-3xl relative overflow-hidden bg-white/70 dark:bg-[#14141c]/60 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-[0_20px_40px_rgba(124,58,237,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
+                  className="glass-panel cardholder-glow rounded-3xl relative overflow-hidden bg-white/70 dark:bg-[#14141c]/60 backdrop-blur-md border border-gray-200 dark:border-white/10"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}

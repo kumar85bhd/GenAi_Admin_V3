@@ -206,6 +206,7 @@ async function startServer() {
         desc: app.description,
         keyFeatures: app.key_features,
         metricsEnabled: !!app.metrics_enabled,
+        totalLaunches: app.total_launches || 0,
         baseActivity: 'System: Active',
         isFavorite: false,
         metrics: '94/100',
@@ -241,6 +242,7 @@ async function startServer() {
         display_order: display_order || 0,
         is_active: !!is_active,
         metrics_enabled: !!metrics_enabled,
+        total_launches: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -292,6 +294,22 @@ async function startServer() {
       res.json({ message: "App deleted" });
     } catch (e: any) {
       res.status(400).json({ detail: e.message });
+    }
+  });
+
+  app.post("/api/workspace/apps/:id/launch", async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+      await db.read();
+      const index = db.data.workspace_apps.findIndex((a: any) => a.id === id);
+      if (index !== -1) {
+        db.data.workspace_apps[index].total_launches = (db.data.workspace_apps[index].total_launches || 0) + 1;
+        await db.write();
+      }
+      res.json({ status: "ok" });
+    } catch {
+      // Fail silently
+      res.json({ status: "ok" });
     }
   });
 

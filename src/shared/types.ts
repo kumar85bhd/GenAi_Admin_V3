@@ -12,6 +12,7 @@ export interface AppData {
   metricsEnabled?: boolean;
   status: string;
   lastUsed: string;
+  totalLaunches?: number;
 }
 
 export interface AppMetric {

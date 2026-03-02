@@ -66,4 +66,10 @@
   .glass-card {
     @apply bg-white/40 dark:bg-white/5 backdrop-blur-lg border border-white/30 dark:border-white/10 shadow-lg;
   }
+  .cardholder-glow {
+    box-shadow: 0 0 0 1px rgba(60,80,255,0.04), 0 12px 28px rgba(0,0,0,0.08);
+  }
+  .dark .cardholder-glow {
+    box-shadow: 0 0 0 1px rgba(120,140,255,0.06), 0 12px 32px rgba(0,0,0,0.35);
+  }
 }

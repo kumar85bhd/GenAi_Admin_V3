@@ -37,6 +37,7 @@ export interface WorkspaceApp {
   display_order: number;
   is_active: boolean;
   metrics_enabled: boolean;
+  total_launches: number;
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +68,18 @@ export async function initDb() {
   if (!db.data) {
     db.data = defaultData;
     await db.write();
+  } else {
+    // Migration: Ensure total_launches exists for all apps
+    let changed = false;
+    db.data.workspace_apps.forEach((app: any) => {
+      if (app.total_launches === undefined) {
+        app.total_launches = 0;
+        changed = true;
+      }
+    });
+    if (changed) {
+      await db.write();
+    }
   }
 }
 
@@ -145,6 +158,7 @@ export async function seedDb() {
           key_features: '',
           is_active: true,
           metrics_enabled: false,
+          total_launches: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });

@@ -130,4 +130,18 @@ export const api = {
   updateFavorites: async (favorites: number[]): Promise<void> => {
     localStorage.setItem('favorites', JSON.stringify(favorites));
   },
+
+  /**
+   * Increments the launch count for a specific application.
+   * @param id - The ID of the application.
+   */
+  launchApp: async (id: number): Promise<void> => {
+    try {
+      await fetch(`/api/workspace/apps/${id}/launch`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to record app launch', error);
+    }
+  },
 };
