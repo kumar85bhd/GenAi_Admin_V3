@@ -3,13 +3,8 @@
 ## 1. Folder Structure
 ```
 /backend
-  /core             # Core logic (config, security, dependencies)
-  /models           # SQLAlchemy models
-  /schemas          # Pydantic schemas
-  /services         # Business logic
-  /routes           # API routes
-  database.py       # Database session management
-  main.py           # FastAPI application entry point
+  data/             # JSON storage (workspace.json)
+  database.ts       # lowdb initialization and seeding
 /src
   /modules
     /workspace      # User-facing module
@@ -47,9 +42,9 @@
 
 ### 3.1 AuthContext
 - **State**: `user` (User object or null), `isAuthenticated` (boolean)
-- **Functions**: `login`, `logout`
+- **Functions**: `login`, `ssoLogin`, `logout`
 - **Source**: `src/shared/context/AuthContext.tsx`
-- **SSO Integration**: The context is designed to support SSO flows by checking for tokens passed via URL parameters or cookies after a successful IdP redirect, and updating the authentication state accordingly.
+- **SSO Integration**: The context supports SSO flows by handling verified email identities from the backend and updating the authentication state accordingly.
 
 ## 4. Routing Configuration
 

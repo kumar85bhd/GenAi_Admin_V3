@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (formData: FormData) => Promise<void>;
+  ssoLogin: (email: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -96,6 +97,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
+   * Logs in a user using SSO identity.
+   * @param email - The verified SSO email.
+   */
+  const ssoLogin = async (email: string) => {
+    try {
+      const response = await fetch('/api/auth/sso-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'SSO Login failed' }));
+        throw new Error(errorData.detail || 'SSO Login failed');
+      }
+      const data = await response.json();
+      if (data && data.access_token) {
+        localStorage.setItem('access_token', data.access_token);
+        const userRes = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${data.access_token}` }
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setUser(userData);
+        } else {
+          localStorage.removeItem('access_token');
+          throw new Error('Failed to fetch user profile after SSO.');
+        }
+      }
+    } catch (error: any) {
+      console.error('SSO Login process failed:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Logs out the current user.
    */
   const logout = () => {
@@ -108,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, ssoLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

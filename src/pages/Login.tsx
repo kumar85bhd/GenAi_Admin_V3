@@ -1,24 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../shared/context/useAuth';
 import { motion } from 'framer-motion';
+import { Globe } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { ssoLogin } = useAuth();
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      // In a real production app, we would strictly validate event.origin
+      if (event.data?.type === 'SSO_SUCCESS') {
+        const { email } = event.data;
+        setLoading(true);
+        setError('');
+        try {
+          await ssoLogin(email);
+          window.location.href = '/workspace';
+        } catch (err: any) {
+          setError(err.message || 'SSO Login failed');
+          setLoading(false);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [ssoLogin]);
+
+  const handleSSO = () => {
     setError('');
-    try {
-      const formData = new FormData();
-      formData.append('username', email); // OAuth2PasswordRequestForm expects 'username' field
-      formData.append('password', password);
-      await login(formData);
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
-    }
+    const width = 600;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    window.open(
+      '/api/auth/sso-callback', 
+      'sso_popup', 
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
   };
 
   return (
@@ -35,9 +55,9 @@ const Login: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to your workspace</p>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-2">GenAI Workspace</h1>
+          <p className="text-muted-foreground">Secure Enterprise Single Sign-On</p>
         </div>
 
         {error && (
@@ -46,36 +66,24 @@ const Login: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-foreground/80">Email</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-background/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-foreground/80">Password</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-background/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+        <div className="space-y-6">
           <button 
-            type="submit"
-            className="w-full py-2.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-colors shadow-lg shadow-primary/25 mt-6"
+            onClick={handleSSO}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-all shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed group"
           >
-            Sign In
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            ) : (
+              <Globe size={20} className="group-hover:rotate-12 transition-transform" />
+            )}
+            {loading ? 'Authenticating...' : 'Sign in with SSO'}
           </button>
-        </form>
+          
+          <p className="text-center text-xs text-muted-foreground px-4">
+            By signing in, you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </div>
       </motion.div>
     </div>
   );

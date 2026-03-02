@@ -14,17 +14,26 @@ The GenAI Workspace is a unified platform providing users with access to various
 
 ## 4. Backend Consolidation Update
 
-As part of a recent backend consolidation effort, the underlying technology has been migrated from a Node.js and SQLite stack to a FastAPI and PostgreSQL stack. This change was made to improve performance, scalability, and maintainability.
+The underlying technology has been migrated to an Express (Node.js) and lowdb (JSON) stack. This change provides a lightweight, performant, and easily maintainable backend that works seamlessly in restricted environments.
 
 ### 4.1 Impact on Users
 
 **There are no changes to the user interface, user experience, or application functionality.** All existing features and workflows remain exactly the same. The API contract has been preserved, ensuring that the frontend continues to work seamlessly with the new backend.
 
-### 4.2 Endpoint Contract Confirmation
+### 4.2 Authentication Flow Update
 
-All API endpoints remain unchanged. The following endpoints are now served by the FastAPI backend, but their paths, request/response formats, and behavior are identical to the previous implementation:
+The platform now supports Single Sign-On (SSO) as the primary authentication method.
+- **SSO Redirect**: Users are redirected to a secure SSO provider for identity verification.
+- **SSO Callback**: Upon successful verification, the user is returned to the workspace.
+- **JWT Issuance**: The backend issues a standard JWT for session management, ensuring a secure and seamless journey from login to workspace.
+
+### 4.3 Endpoint Contract Confirmation
+
+The following endpoints are served by the Express backend:
 
 - `/api/auth/login`
+- `/api/auth/sso-login`
+- `/api/auth/sso-callback`
 - `/api/auth/me`
 - `/api/workspace/apps`
 - `/api/workspace/categories`

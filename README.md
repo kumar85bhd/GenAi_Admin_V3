@@ -5,11 +5,12 @@ A unified React application combining a user-facing GenAI Workspace and an Admin
 
 ## 2. Architecture Summary
 - **Frontend**: React (TypeScript) + Vite
+- **Backend**: Express (Node.js)
 - **Database**: lowdb (JSON-based)
 - **Styling**: Tailwind CSS
 - **Routing**: React Router DOM (v6)
 - **State Management**: Context API (Auth)
-- **Authentication**: JWT (HS256)
+- **Authentication**: JWT (HS256) + SSO (Minimal Integration)
 - **Modules**:
   - **Workspace**: User interface for AI tools.
   - **Admin**: Dashboard for system health monitoring.
@@ -69,6 +70,8 @@ By default, the application uses **lowdb** for easy setup. The database file wil
 
 ### Authentication
 - `POST /api/auth/login`: Authenticate a user and get a JWT token.
+- `POST /api/auth/sso-login`: Authenticate via SSO identity.
+- `GET /api/auth/sso-callback`: Handle SSO provider callback.
 - `GET /api/auth/me`: Get the current authenticated user's information.
 
 ### Workspace

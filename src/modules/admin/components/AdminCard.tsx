@@ -3,6 +3,7 @@ import { Service, Metric, HealthStatus } from '../types';
 import { fetchServiceMetrics } from '../services/api';
 import { ExternalLink, RefreshCw } from 'lucide-react';
 import { DynamicIcon } from '../../../shared/components/ui/DynamicIcon';
+import { getCategoryStyles } from '../../../shared/utils/categoryColors';
 
 interface AdminCardProps {
   service: Service;
@@ -17,28 +18,6 @@ const getStatusColor = (status: HealthStatus) => {
   }
 };
 
-const getCategoryColor = (category: string) => {
-  const lower = (category || '').toLowerCase();
-  if (lower.includes('core')) return 'from-blue-500/10 to-blue-600/5 border-blue-200/50 dark:border-blue-700/30';
-  if (lower.includes('ai')) return 'from-purple-500/10 to-purple-600/5 border-purple-200/50 dark:border-purple-700/30';
-  if (lower.includes('links')) return 'from-amber-500/10 to-amber-600/5 border-amber-200/50 dark:border-amber-700/30';
-  if (lower.includes('infra')) return 'from-emerald-500/10 to-emerald-600/5 border-emerald-200/50 dark:border-emerald-700/30';
-  if (lower.includes('analytics') || lower.includes('feedback')) return 'from-rose-500/10 to-rose-600/5 border-rose-200/50 dark:border-rose-700/30';
-  if (lower.includes('database') || lower.includes('data')) return 'from-indigo-500/10 to-indigo-600/5 border-indigo-200/50 dark:border-indigo-700/30';
-  return 'from-slate-500/10 to-slate-600/5 border-slate-200/50 dark:border-slate-700/30';
-};
-
-const getIconColor = (category: string) => {
-  const lower = (category || '').toLowerCase();
-  if (lower.includes('core')) return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30';
-  if (lower.includes('ai')) return 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30';
-  if (lower.includes('links')) return 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30';
-  if (lower.includes('infra')) return 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30';
-  if (lower.includes('analytics') || lower.includes('feedback')) return 'text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/30';
-  if (lower.includes('database') || lower.includes('data')) return 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30';
-  return 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800';
-};
-
 /**
  * AdminCard
  * Displays a single infrastructure service card with metrics.
@@ -47,6 +26,7 @@ const getIconColor = (category: string) => {
 const AdminCard: React.FC<AdminCardProps> = ({ service }) => {
   const [metrics, setMetrics] = useState<Metric[]>(service.metrics || []);
   const [loading, setLoading] = useState(false);
+  const colors = getCategoryStyles(service.category);
 
   const handleRefresh = async (e?: React.MouseEvent) => {
     if (e) {
@@ -86,7 +66,7 @@ const AdminCard: React.FC<AdminCardProps> = ({ service }) => {
     <div
       onClick={handleOpen}
       onAuxClick={handleOpen}
-      className={`group relative bg-white dark:bg-slate-800 bg-gradient-to-br ${getCategoryColor(service.category)} border shadow-sm hover:shadow-lg hover:-translate-y-1 rounded-2xl p-6 cursor-pointer transition-all duration-300 flex flex-col h-full overflow-hidden`}
+      className={`group relative bg-white dark:bg-slate-800 bg-gradient-to-br ${colors.bg} ${colors.activeBorder} border shadow-sm hover:shadow-lg hover:-translate-y-1 rounded-2xl p-6 cursor-pointer transition-all duration-300 flex flex-col h-full overflow-hidden`}
     >
       {/* Status Indicator Line */}
       <div className={`absolute top-0 left-0 w-full h-1.5 ${getStatusColor(service.status)} opacity-80`} />
@@ -96,7 +76,7 @@ const AdminCard: React.FC<AdminCardProps> = ({ service }) => {
 
       <div className="flex justify-between items-start mb-4 relative z-10">
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${getIconColor(service.category)}`}>
+          <div className={`p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${colors.bg} ${colors.activeText}`}>
             <DynamicIcon name={service.icon || service.type || 'Box'} size={18} />
           </div>
           <div>
@@ -104,7 +84,7 @@ const AdminCard: React.FC<AdminCardProps> = ({ service }) => {
               {service.name}
             </h3>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+              <span className={`text-[10px] ${colors.activeText} font-medium`}>
                 {service.category}
               </span>
             </div>

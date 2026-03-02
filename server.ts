@@ -6,7 +6,7 @@ import fs from "fs";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { db, initDb, seedDb } from "./backend/database.js";
+import { db, initDb, seedDb } from "./backend/database.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,6 +62,57 @@ async function startServer() {
 
     const token = jwt.sign({ sub: user.email, email: user.email, is_admin: !!user.is_admin }, SECRET_KEY, { expiresIn: '24h' });
     res.json({ access_token: token, token_type: "bearer" });
+  });
+
+  // SSO Login
+  app.post("/api/auth/sso-login", async (req, res) => {
+    const { email } = req.body;
+    
+    // Strict email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({ detail: "Invalid email format" });
+    }
+
+    await db.read();
+    let user = db.data.users.find((u: any) => u.email === email);
+
+    if (!user) {
+      // Create minimal user record if not exists
+      const id = db.data.users.length > 0 ? Math.max(...db.data.users.map((u: any) => u.id)) + 1 : 1;
+      user = {
+        id,
+        username: email.split('@')[0],
+        email: email,
+        hashed_password: bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 10),
+        is_active: true,
+        is_admin: false
+      };
+      db.data.users.push(user);
+      await db.write();
+    }
+
+    const token = jwt.sign({ sub: user.email, email: user.email, is_admin: !!user.is_admin }, SECRET_KEY, { expiresIn: '24h' });
+    res.json({ access_token: token, token_type: "bearer" });
+  });
+
+  // SSO Callback (Mock implementation for integration)
+  app.get("/api/auth/sso-callback", (req, res) => {
+    const mockEmail = req.query.email || "user@example.com";
+    res.send(`
+      <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'SSO_SUCCESS', email: '${mockEmail}' }, '*');
+              window.close();
+            } else {
+              window.location.href = '/login?sso_email=${mockEmail}';
+            }
+          </script>
+        </body>
+      </html>
+    `);
   });
 
   app.get("/api/auth/me", authenticateToken, async (req: any, res) => {
